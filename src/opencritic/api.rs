@@ -28,9 +28,6 @@ pub async fn get_recent_releases(platforms: &[String], genres: &[String]) -> Vec
     .map(|game| game.id)
     .collect::<Vec<i32>>();
 
-  use chrono::Utc;
-  let start = Utc::now();
-
   let mut games = future::join_all(
     ids
       .iter()
@@ -40,9 +37,6 @@ pub async fn get_recent_releases(platforms: &[String], genres: &[String]) -> Vec
         }
       })
   ).await;
-
-  let delta = Utc::now() - start;
-  println!("it took {}ms", delta.num_milliseconds());
 
   filter_by_platforms(&mut games, platforms);
   filter_by_genres(&mut games, genres);
