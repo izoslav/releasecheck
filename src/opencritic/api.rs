@@ -12,7 +12,10 @@ pub fn get_platforms() -> Vec<Platform> {
 }
 
 pub fn get_genres() -> Vec<Genre> {
-  todo!()
+  reqwest::blocking::get(GENRES_URL)
+    .unwrap()
+    .json::<Vec<Genre>>()
+    .unwrap()
 }
 
 pub fn get_todays_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {

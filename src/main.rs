@@ -52,8 +52,7 @@ fn list_platforms() -> Result<(), Box<dyn Error>> {
 }
 
 fn list_genres() -> Result<(), Box<dyn Error>> {
-  let mut genres = reqwest::blocking::get(OPENCRITIC_GENRES_URL)?
-    .json::<Vec<Genre>>()?;
+  let mut genres = opencritic::api::get_genres();
 
   genres.sort_by(|a, b| a.name.cmp(&b.name));
 
