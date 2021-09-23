@@ -1,4 +1,7 @@
+#[macro_use] extern crate prettytable;
+
 use clap::{AppSettings, Clap};
+use prettytable::Table;
 use serde::Deserialize;
 
 use chrono::{Datelike, DateTime, Utc};
@@ -42,16 +45,6 @@ struct Game {
 }
 
 impl Game {
-  fn print(&self) {
-    println!(
-      "{} - {} - {} - {}",
-      self.name,
-      self.score(),
-      self.genres(),
-      self.platforms()
-    );
-  }
-
   fn score(&self) -> String {
     if self.average_score < 0. {
       "unscored".to_string()
@@ -139,9 +132,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       if opts.ignore_date { "" } else { "today " }
     );
   } else {
+    let mut table = Table::new();
+    table.set_titles(row!["Name", "Score", "Genres", "Platforms"]);
+
     for game in games {
-      game.print();
+      table.add_row(row![
+        game.name,
+        game.score(),
+        game.genres(),
+        game.platforms(),
+      ]);
     }
+
+    table.printstd();
   }
 
   Ok(())
