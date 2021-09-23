@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Utc};
+use chrono::{DateTime, Datelike, Local};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -24,7 +24,7 @@ pub struct BasicGameInfo {
 pub struct Game {
     // basic info
     pub name: String,
-    first_release_date: DateTime<Utc>,
+    first_release_date: DateTime<Local>,
     #[serde(alias = "Genres")]
     genres: Vec<Genre>,
     #[serde(alias = "Platforms")]
@@ -67,7 +67,7 @@ impl Game {
     }
 
     pub fn released_today(&self) -> bool {
-        let now = Utc::now();
+        let now = Local::now();
         let release = self.first_release_date;
 
         release.year() == now.year() && release.month() == now.month() && release.day() == now.day()
