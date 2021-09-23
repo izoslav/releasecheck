@@ -2,6 +2,9 @@
 name = "releasecheck"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
+description = "Simple CLI app for getting a list of latest game releases from OpenCritic"
+repository = "https://github.com/izoslav/releasecheck/"
 
 [dependencies]
 chrono = { version = "0.4.19", features = ["serde"] }
