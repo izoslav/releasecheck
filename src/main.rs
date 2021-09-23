@@ -1,9 +1,9 @@
 use clap::{AppSettings, Clap};
 use serde::Deserialize;
 
-use chrono::{DateTime, Utc};
+use chrono::{Datelike, DateTime, Utc};
 
-const OPENCRITIC_URL: &str = "https://api.opencritic.com/api/game/upcoming";
+const OPENCRITIC_URL: &str = "https://api.opencritic.com/api/game/recently-released";
 
 #[derive(Debug, Deserialize)]
 struct Company {
@@ -37,14 +37,14 @@ struct Game {
   platforms: Vec<Platform>,
 
   // score
-  average_score: i32,
+  average_score: f32,
   tier: String,
 }
 
 impl Game {
   fn print(&self) {
     println!(
-      "{} {} ({})",
+      "{} - {} - {}",
       self.name,
       self.score(),
       self.platforms()
@@ -52,20 +52,38 @@ impl Game {
   }
 
   fn score(&self) -> String {
-    if self.average_score < 0 {
+    if self.average_score < 0. {
       "unscored".to_string()
     } else {
-      format!("{} {}/100", self.tier, self.average_score)
+      format!("{} {:.0}/100", self.tier, self.average_score)
     }
   }
 
   fn platforms(&self) -> String {
     self.platforms.iter()
-      .map(|platform| {
-        platform.short_name.clone()
-      })
+      .map(|platform| platform.short_name.clone())
       .collect::<Vec<String>>()
       .join(", ")
+  }
+
+  fn released_for(&self, platforms: &Vec<String>) -> bool {
+    if platforms.len() > 0 {
+      self.platforms.iter()
+        .any(|platform|
+          platforms.contains(&platform.short_name)
+        )
+    } else {
+      true
+    }
+  }
+
+  fn released_today(&self) -> bool {
+    let now = Utc::now();
+    let release = self.first_release_date;
+
+    release.year() == now.year() &&
+    release.month() == now.month() &&
+    release.day() == now.day()
   }
 }
 
@@ -83,21 +101,43 @@ struct Opts {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let opts: Opts = Opts::parse();
 
-  println!("platforms: {:?}", opts.platforms);
-  println!("all_games: {}", opts.ignore_date);
+  let platforms = opts.platforms
+    .as_ref()
+    .map_or_else(
+      || Vec::new(),
+      |p| p.split(",").map(|e| e.to_string()).collect());
 
-  let games = reqwest::blocking::get(OPENCRITIC_URL)?
+  println!("{:?}", platforms);
+
+  let mut games = reqwest::blocking::get(OPENCRITIC_URL)?
     .json::<Vec<Game>>()?;
+  games.sort_by(|a, b| a.name.cmp(&b.name));
 
-  println!("games = {:?}", games);
+  // println!("games = {:?}", games);
 
   if games.len() == 0 {
     println!("No games released today :(");
     return Ok(());
   }
 
-  for game in games {
-    game.print();
+  let games = games
+    .iter()
+    .filter(|&game| {
+      let released_today = opts.ignore_date || game.released_today();
+      
+      released_today && game.released_for(&platforms)
+    })
+    .collect::<Vec<&Game>>();
+
+  if games.len() == 0 {
+    println!(
+      "No relevant games released {}:(",
+      if opts.ignore_date { "" } else { "today " }
+    );
+  } else {
+    for game in games {
+      game.print();
+    }
   }
 
   Ok(())
