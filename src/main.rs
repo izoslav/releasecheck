@@ -70,14 +70,10 @@ impl Game {
   }
 
   fn released_for(&self, platforms: &Vec<String>) -> bool {
-    if platforms.len() > 0 {
-      self.platforms.iter()
-        .any(|platform|
-          platforms.contains(&platform.short_name)
-        )
-    } else {
-      true
-    }
+    self.platforms.iter()
+      .any(|platform|
+        platforms.contains(&platform.short_name)
+      )
   }
 
   fn released_today(&self) -> bool {
@@ -137,7 +133,15 @@ fn main() -> Result<(), Box<dyn Error>> {
     .as_ref()
     .map_or_else(
       || Vec::new(),
-      |p| p.split(",").map(|e| e.to_string()).collect());
+      |p| p.split(",").map(|e| e.to_string()).collect()
+    );
+
+  let genres = opts.genres
+    .as_ref()
+    .map_or_else(
+      || Vec::new(),
+      |g| g.split(",").map(|e| e.to_string().to_lowercase()).collect()
+    );
 
   let mut games = reqwest::blocking::get(OPENCRITIC_RELEASES_URL)?
     .json::<Vec<Game>>()?;
@@ -150,6 +154,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   if !opts.ignore_date { filter_by_date(&mut games); }
   filter_by_platforms(&mut games, &platforms);
+  filter_by_genres(&mut games, &genres);
 
   if games.len() == 0 {
     println!(
@@ -182,5 +187,17 @@ fn filter_by_date(games: &mut Vec<Game>) {
 }
 
 fn filter_by_platforms(games: &mut Vec<Game>, platforms: &Vec<String>) {
-  games.retain(|game| game.released_for(&platforms))
+  if platforms.len() > 0 {
+    games.retain(|game| game.released_for(&platforms));
+  }
+}
+
+fn filter_by_genres(games: &mut Vec<Game>, genres: &Vec<String>) {
+  if genres.len() > 0 {
+    games.retain(|game| {
+      genres.iter().any(|genre| {
+        game.genres().to_lowercase().contains(genre)
+      })
+    })
+  }
 }
