@@ -95,10 +95,15 @@ impl Game {
 #[clap(setting = AppSettings::ColoredHelp)]
 #[clap(about = "Checks OpenCritic for games that were released today")]
 struct Opts {
-  #[clap(short, long, about = "Comma-separated list of platofrm short names")]
-  platforms: Option<String>,
+  // options
   #[clap(short, long, about = "Prints all games returned by OpenCritic")]
   ignore_date: bool,
+  // filters
+  #[clap(short, long, about = "Comma-separated list of platform short names for filtering")]
+  platforms: Option<String>,
+  #[clap(short, long, about = "Comma-separated list of genres for filtering")]
+  genres: Option<String>,
+  // subcommands
   #[clap(long, about = "List available platforms and their short names, and exits program")]
   list_platforms: bool,
 }
@@ -143,14 +148,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     return Ok(());
   }
 
-  let games = games
-    .iter()
-    .filter(|&game| {
-      let released_today = opts.ignore_date || game.released_today();
-      
-      released_today && game.released_for(&platforms)
-    })
-    .collect::<Vec<&Game>>();
+  if !opts.ignore_date { filter_by_date(&mut games); }
+  filter_by_platforms(&mut games, &platforms);
 
   if games.len() == 0 {
     println!(
@@ -158,6 +157,8 @@ fn main() -> Result<(), Box<dyn Error>> {
       if opts.ignore_date { "recently" } else { "today" }
     );
   } else {
+    println!("📀 Today's releases:");
+
     let mut table = Table::new();
     table.set_titles(row!["Name", "Score", "Genres", "Platforms"]);
 
@@ -174,4 +175,12 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   Ok(())
+}
+
+fn filter_by_date(games: &mut Vec<Game>) {
+  games.retain(|game| game.released_today())
+}
+
+fn filter_by_platforms(games: &mut Vec<Game>, platforms: &Vec<String>) {
+  games.retain(|game| game.released_for(&platforms))
 }
