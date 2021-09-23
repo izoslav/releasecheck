@@ -1,6 +1,6 @@
 [package]
 name = "releasecheck"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2018"
 license = "MIT"
 description = "Simple CLI app for getting a list of latest game releases from OpenCritic"
