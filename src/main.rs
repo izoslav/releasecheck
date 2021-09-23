@@ -4,9 +4,11 @@ use clap::{AppSettings, Clap};
 use prettytable::Table;
 use serde::Deserialize;
 
+use std::error::Error;
 use chrono::{Datelike, DateTime, Utc};
 
 const OPENCRITIC_RELEASES_URL: &str = "https://api.opencritic.com/api/game/recently-released";
+const OPENCRITIC_PLATFORMS_URL: &str = "https://api.opencritic.com/api/platform";
 
 #[derive(Debug, Deserialize)]
 struct Company {
@@ -93,14 +95,38 @@ impl Game {
 #[clap(setting = AppSettings::ColoredHelp)]
 #[clap(about = "Checks OpenCritic for games that were released today")]
 struct Opts {
-  #[clap(short, long, about = "Comma-separated list of platforms")]
+  #[clap(short, long, about = "Comma-separated list of platofrm short names")]
   platforms: Option<String>,
   #[clap(short, long, about = "Prints all games returned by OpenCritic")]
   ignore_date: bool,
+  #[clap(long, about = "List available platforms and their short names, and exits program")]
+  list_platforms: bool,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn list_platforms() -> Result<(), Box<dyn Error>> {
+  let mut platforms = reqwest::blocking::get(OPENCRITIC_PLATFORMS_URL)?
+    .json::<Vec<Platform>>()?;
+
+  platforms.sort_by(|a, b| a.name.cmp(&b.name));
+
+  let mut table = Table::new();
+  table.set_titles(row!["Name", "Short name"]);
+
+  for platform in platforms {
+    table.add_row(row![platform.name, platform.short_name]);
+  }
+
+  table.printstd();
+
+  Ok(())
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
   let opts: Opts = Opts::parse();
+
+  if opts.list_platforms {
+    return list_platforms();
+  }
 
   let platforms = opts.platforms
     .as_ref()
