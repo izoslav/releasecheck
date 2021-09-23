@@ -70,7 +70,7 @@ impl Game {
       .join(", ")
   }
 
-  fn released_for(&self, platforms: &Vec<String>) -> bool {
+  fn released_for(&self, platforms: &[String]) -> bool {
     self.platforms.iter()
       .any(|platform|
         platforms.contains(&platform.short_name)
@@ -155,31 +155,26 @@ fn main() -> Result<(), Box<dyn Error>> {
   let platforms = opts.platforms
     .as_ref()
     .map_or_else(
-      || Vec::new(),
-      |p| p.split(",").map(|e| e.to_string()).collect()
+      Vec::new,
+      |p| p.split(',').map(|e| e.to_string()).collect()
     );
 
   let genres = opts.genres
     .as_ref()
     .map_or_else(
-      || Vec::new(),
-      |g| g.split(",").map(|e| e.to_string().to_lowercase()).collect()
+      Vec::new,
+      |g| g.split(',').map(|e| e.to_string().to_lowercase()).collect()
     );
 
   let mut games = reqwest::blocking::get(OPENCRITIC_RELEASES_URL)?
     .json::<Vec<Game>>()?;
   games.sort_by(|a, b| a.name.cmp(&b.name));
 
-  if games.len() == 0 {
-    println!("No games released today :(");
-    return Ok(());
-  }
-
   if !opts.ignore_date { filter_by_date(&mut games); }
   filter_by_platforms(&mut games, &platforms);
   filter_by_genres(&mut games, &genres);
 
-  if games.len() == 0 {
+  if games.is_empty() {
     println!(
       "🔴 No relevant games released {} 😢",
       if opts.ignore_date { "recently" } else { "today" }
@@ -209,14 +204,14 @@ fn filter_by_date(games: &mut Vec<Game>) {
   games.retain(|game| game.released_today())
 }
 
-fn filter_by_platforms(games: &mut Vec<Game>, platforms: &Vec<String>) {
-  if platforms.len() > 0 {
-    games.retain(|game| game.released_for(&platforms));
+fn filter_by_platforms(games: &mut Vec<Game>, platforms: &[String]) {
+  if !platforms.is_empty() {
+    games.retain(|game| game.released_for(platforms));
   }
 }
 
-fn filter_by_genres(games: &mut Vec<Game>, genres: &Vec<String>) {
-  if genres.len() > 0 {
+fn filter_by_genres(games: &mut Vec<Game>, genres: &[String]) {
+  if !genres.is_empty() {
     games.retain(|game| {
       genres.iter().any(|genre| {
         game.genres().to_lowercase().contains(genre)
