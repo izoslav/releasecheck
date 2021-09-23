@@ -9,6 +9,7 @@ use chrono::{Datelike, DateTime, Utc};
 
 const OPENCRITIC_RELEASES_URL: &str = "https://api.opencritic.com/api/game/recently-released";
 const OPENCRITIC_PLATFORMS_URL: &str = "https://api.opencritic.com/api/platform";
+const OPENCRITIC_GENRES_URL: &str = "https://api.opencritic.com/api/genre";
 
 #[derive(Debug, Deserialize)]
 struct Company {
@@ -102,6 +103,8 @@ struct Opts {
   // subcommands
   #[clap(long, about = "List available platforms and their short names, and exits program")]
   list_platforms: bool,
+  #[clap(long, about = "List available genres, and exits program")]
+  list_genres: bool,
 }
 
 fn list_platforms() -> Result<(), Box<dyn Error>> {
@@ -117,7 +120,23 @@ fn list_platforms() -> Result<(), Box<dyn Error>> {
     table.add_row(row![platform.name, platform.short_name]);
   }
 
+  println!("Available platforms:");
   table.printstd();
+
+  Ok(())
+}
+
+fn list_genres() -> Result<(), Box<dyn Error>> {
+  let mut genres = reqwest::blocking::get(OPENCRITIC_GENRES_URL)?
+    .json::<Vec<Genre>>()?;
+
+  genres.sort_by(|a, b| a.name.cmp(&b.name));
+
+  println!("Available genres:");
+
+  for genre in genres {
+    println!("- {}", genre.name);
+  }
 
   Ok(())
 }
@@ -127,6 +146,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
   if opts.list_platforms {
     return list_platforms();
+  }
+
+  if opts.list_genres {
+    return list_genres();
   }
 
   let platforms = opts.platforms
