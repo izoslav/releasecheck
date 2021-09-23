@@ -34,8 +34,7 @@ struct Opts {
 }
 
 fn list_platforms() -> Result<(), Box<dyn Error>> {
-  let mut platforms = reqwest::blocking::get(OPENCRITIC_PLATFORMS_URL)?
-    .json::<Vec<Platform>>()?;
+  let mut platforms = opencritic::api::get_platforms();
 
   platforms.sort_by(|a, b| a.name.cmp(&b.name));
 
