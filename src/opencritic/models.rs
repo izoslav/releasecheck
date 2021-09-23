@@ -14,6 +14,12 @@ pub struct Platform {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct BasicGameInfo {
+  pub id: i32,
+  pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Game {
   // basic info

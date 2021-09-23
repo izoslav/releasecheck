@@ -1,8 +1,8 @@
 #[macro_use] extern crate prettytable;
 
-mod models;
+mod opencritic;
 
-use models::*;
+use opencritic::models::*;
 
 use clap::{AppSettings, Clap};
 use prettytable::Table;
