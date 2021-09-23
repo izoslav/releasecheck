@@ -1,5 +1,7 @@
 use super::models::*;
 
+use futures::future;
+
 const RELEASES_URL: &str = "https://api.opencritic.com/api/game?time=last90&sort=firstReleaseDate";
 const PLATFORMS_URL: &str = "https://api.opencritic.com/api/platform";
 const GENRES_URL: &str = "https://api.opencritic.com/api/genre";
@@ -19,19 +21,28 @@ pub fn get_genres() -> Vec<Genre> {
     .unwrap()
 }
 
-pub fn get_recent_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {
-  let releases = get_latest_releases();
+pub async fn get_recent_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {
+  let releases = get_latest_releases().await;
   let ids = releases
     .iter()
     .map(|game| game.id)
     .collect::<Vec<i32>>();
 
-  let mut games = ids
-    .iter()
-    .map(|&id| {
-      get_game_details(id)
-    })
-    .collect();
+  use chrono::Utc;
+  let start = Utc::now();
+
+  let mut games = future::join_all(
+    ids
+      .iter()
+      .map(|&id| {
+        async move {
+          get_game_details(id).await
+        }
+      })
+  ).await;
+
+  let delta = Utc::now() - start;
+  println!("it took {}ms", delta.num_milliseconds());
 
   filter_by_platforms(&mut games, platforms);
   filter_by_genres(&mut games, genres);
@@ -39,25 +50,29 @@ pub fn get_recent_releases(platforms: &[String], genres: &[String]) -> Vec<Game>
   games
 }
 
-pub fn get_todays_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {
-  let mut games = get_recent_releases(platforms, genres);
+pub async fn get_todays_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {
+  let mut games = get_recent_releases(platforms, genres).await;
 
   filter_by_date(&mut games);
 
   games
 }
 
-fn get_latest_releases() -> Vec<BasicGameInfo> {
-  reqwest::blocking::get(RELEASES_URL)
+async fn get_latest_releases() -> Vec<BasicGameInfo> {
+  reqwest::get(RELEASES_URL)
+    .await
     .unwrap()
     .json::<Vec<BasicGameInfo>>()
+    .await
     .unwrap()
 }
 
-fn get_game_details(id: i32) -> Game {
-  reqwest::blocking::get(format!("{}/{}", GAME_URL, id))
+async fn get_game_details(id: i32) -> Game {
+  reqwest::get(format!("{}/{}", GAME_URL, id))
+    .await
     .unwrap()
     .json::<Game>()
+    .await
     .unwrap()
 }
 

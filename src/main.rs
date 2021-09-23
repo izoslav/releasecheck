@@ -55,7 +55,8 @@ fn list_genres() {
   }
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
   let opts: Opts = Opts::parse();
 
   if opts.list_platforms {
@@ -81,9 +82,9 @@ fn main() {
     );
 
   let games = if opts.ignore_date {
-    opencritic::api::get_recent_releases(&platforms, &genres)
+    opencritic::api::get_recent_releases(&platforms, &genres).await
   } else {
-    opencritic::api::get_todays_releases(&platforms, &genres)
+    opencritic::api::get_todays_releases(&platforms, &genres).await
   };
 
   if games.is_empty() {
