@@ -1,91 +1,17 @@
 #[macro_use] extern crate prettytable;
 
+mod models;
+
+use models::*;
+
 use clap::{AppSettings, Clap};
 use prettytable::Table;
-use serde::Deserialize;
 
 use std::error::Error;
-use chrono::{Datelike, DateTime, Utc};
 
 const OPENCRITIC_RELEASES_URL: &str = "https://api.opencritic.com/api/game/recently-released";
 const OPENCRITIC_PLATFORMS_URL: &str = "https://api.opencritic.com/api/platform";
 const OPENCRITIC_GENRES_URL: &str = "https://api.opencritic.com/api/genre";
-
-#[derive(Debug, Deserialize)]
-struct Company {
-  name: String,
-  r#type: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct Genre {
-  name: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Platform {
-  name: String,
-  short_name: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Game {
-  // basic info
-  name: String,
-  first_release_date: DateTime<Utc>,
-  #[serde(alias = "Companies")]
-  companies: Vec<Company>,
-  #[serde(alias = "Genres")]
-  genres: Vec<Genre>,
-  #[serde(alias = "Platforms")]
-  platforms: Vec<Platform>,
-
-  // score
-  average_score: f32,
-  tier: String,
-}
-
-impl Game {
-  fn score(&self) -> String {
-    if self.average_score < 0. {
-      "unscored".to_string()
-    } else {
-      format!("{} {:.0}/100", self.tier, self.average_score)
-    }
-  }
-
-  fn platforms(&self) -> String {
-    self.platforms.iter()
-      .map(|platform| platform.short_name.clone())
-      .collect::<Vec<String>>()
-      .join(", ")
-  }
-
-  fn genres(&self) -> String {
-    self.genres.iter()
-      .map(|genre| genre.name.clone())
-      .collect::<Vec<String>>()
-      .join(", ")
-  }
-
-  fn released_for(&self, platforms: &[String]) -> bool {
-    self.platforms.iter()
-      .any(|platform|
-        platforms.contains(&platform.short_name)
-      )
-  }
-
-  fn released_today(&self) -> bool {
-    let now = Utc::now();
-    let release = self.first_release_date;
-
-    release.year() == now.year() &&
-    release.month() == now.month() &&
-    release.day() == now.day()
-  }
-}
 
 #[derive(Clap)]
 #[clap(version = "0.1", author = "Marcin K. <dev@izoslav.pl>")]
