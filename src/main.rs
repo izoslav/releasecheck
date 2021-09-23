@@ -1,6 +1,8 @@
 use clap::{AppSettings, Clap};
 use serde::Deserialize;
 
+use chrono::{DateTime, Utc};
+
 const OPENCRITIC_URL: &str = "https://api.opencritic.com/api/game/upcoming";
 
 #[derive(Debug, Deserialize)]
@@ -24,14 +26,47 @@ struct Platform {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Game {
+  // basic info
   name: String,
-  first_release_date: String,
+  first_release_date: DateTime<Utc>,
   #[serde(alias = "Companies")]
   companies: Vec<Company>,
   #[serde(alias = "Genres")]
   genres: Vec<Genre>,
   #[serde(alias = "Platforms")]
   platforms: Vec<Platform>,
+
+  // score
+  average_score: i32,
+  tier: String,
+}
+
+impl Game {
+  fn print(&self) {
+    println!(
+      "{} {} ({})",
+      self.name,
+      self.score(),
+      self.platforms()
+    );
+  }
+
+  fn score(&self) -> String {
+    if self.average_score < 0 {
+      "unscored".to_string()
+    } else {
+      format!("{} {}/100", self.tier, self.average_score)
+    }
+  }
+
+  fn platforms(&self) -> String {
+    self.platforms.iter()
+      .map(|platform| {
+        platform.short_name.clone()
+      })
+      .collect::<Vec<String>>()
+      .join(", ")
+  }
 }
 
 #[derive(Clap)]
@@ -51,10 +86,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   println!("platforms: {:?}", opts.platforms);
   println!("all_games: {}", opts.ignore_date);
 
-  let body = reqwest::blocking::get(OPENCRITIC_URL)?
+  let games = reqwest::blocking::get(OPENCRITIC_URL)?
     .json::<Vec<Game>>()?;
 
-  println!("body = {:?}", body);
+  println!("games = {:?}", games);
+
+  if games.len() == 0 {
+    println!("No games released today :(");
+    return Ok(());
+  }
+
+  for game in games {
+    game.print();
+  }
 
   Ok(())
 }
