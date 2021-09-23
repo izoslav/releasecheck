@@ -7,17 +7,21 @@ const PLATFORMS_URL: &str = "https://api.opencritic.com/api/platform";
 const GENRES_URL: &str = "https://api.opencritic.com/api/genre";
 const GAME_URL: &str = "https://api.opencritic.com/api/game";
 
-pub fn get_platforms() -> Vec<Platform> {
-  reqwest::blocking::get(PLATFORMS_URL)
+pub async fn get_platforms() -> Vec<Platform> {
+  reqwest::get(PLATFORMS_URL)
+    .await
     .unwrap()
     .json::<Vec<Platform>>()
+    .await
     .unwrap()
 }
 
-pub fn get_genres() -> Vec<Genre> {
-  reqwest::blocking::get(GENRES_URL)
+pub async fn get_genres() -> Vec<Genre> {
+  reqwest::get(GENRES_URL)
+    .await
     .unwrap()
     .json::<Vec<Genre>>()
+    .await
     .unwrap()
 }
 

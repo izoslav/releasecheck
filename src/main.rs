@@ -27,8 +27,8 @@ struct Opts {
   list_genres: bool,
 }
 
-fn list_platforms() {
-  let mut platforms = opencritic::api::get_platforms();
+async fn list_platforms() {
+  let mut platforms = opencritic::api::get_platforms().await;
 
   platforms.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -43,8 +43,8 @@ fn list_platforms() {
   table.printstd();
 }
 
-fn list_genres() {
-  let mut genres = opencritic::api::get_genres();
+async fn list_genres() {
+  let mut genres = opencritic::api::get_genres().await;
 
   genres.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -60,11 +60,11 @@ async fn main() {
   let opts: Opts = Opts::parse();
 
   if opts.list_platforms {
-    return list_platforms();
+    return list_platforms().await;
   }
 
   if opts.list_genres {
-    return list_genres();
+    return list_genres().await;
   }
 
   let platforms = opts.platforms
