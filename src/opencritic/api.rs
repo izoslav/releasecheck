@@ -8,88 +8,81 @@ const GENRES_URL: &str = "https://api.opencritic.com/api/genre";
 const GAME_URL: &str = "https://api.opencritic.com/api/game";
 
 pub async fn get_platforms() -> Vec<Platform> {
-  reqwest::get(PLATFORMS_URL)
-    .await
-    .unwrap()
-    .json::<Vec<Platform>>()
-    .await
-    .unwrap()
+    reqwest::get(PLATFORMS_URL)
+        .await
+        .unwrap()
+        .json::<Vec<Platform>>()
+        .await
+        .unwrap()
 }
 
 pub async fn get_genres() -> Vec<Genre> {
-  reqwest::get(GENRES_URL)
-    .await
-    .unwrap()
-    .json::<Vec<Genre>>()
-    .await
-    .unwrap()
+    reqwest::get(GENRES_URL)
+        .await
+        .unwrap()
+        .json::<Vec<Genre>>()
+        .await
+        .unwrap()
 }
 
 pub async fn get_recent_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {
-  let releases = get_latest_releases().await;
-  let ids = releases
-    .iter()
-    .map(|game| game.id)
-    .collect::<Vec<i32>>();
+    let releases = get_latest_releases().await;
+    let ids = releases.iter().map(|game| game.id).collect::<Vec<i32>>();
 
-  let mut games = future::join_all(
-    ids
-      .iter()
-      .map(|&id| {
-        async move {
-          get_game_details(id).await
-        }
-      })
-  ).await;
+    let mut games = future::join_all(
+        ids.iter()
+            .map(|&id| async move { get_game_details(id).await }),
+    )
+    .await;
 
-  filter_by_platforms(&mut games, platforms);
-  filter_by_genres(&mut games, genres);
+    filter_by_platforms(&mut games, platforms);
+    filter_by_genres(&mut games, genres);
 
-  games
+    games
 }
 
 pub async fn get_todays_releases(platforms: &[String], genres: &[String]) -> Vec<Game> {
-  let mut games = get_recent_releases(platforms, genres).await;
+    let mut games = get_recent_releases(platforms, genres).await;
 
-  filter_by_date(&mut games);
+    filter_by_date(&mut games);
 
-  games
+    games
 }
 
 async fn get_latest_releases() -> Vec<BasicGameInfo> {
-  reqwest::get(RELEASES_URL)
-    .await
-    .unwrap()
-    .json::<Vec<BasicGameInfo>>()
-    .await
-    .unwrap()
+    reqwest::get(RELEASES_URL)
+        .await
+        .unwrap()
+        .json::<Vec<BasicGameInfo>>()
+        .await
+        .unwrap()
 }
 
 async fn get_game_details(id: i32) -> Game {
-  reqwest::get(format!("{}/{}", GAME_URL, id))
-    .await
-    .unwrap()
-    .json::<Game>()
-    .await
-    .unwrap()
+    reqwest::get(format!("{}/{}", GAME_URL, id))
+        .await
+        .unwrap()
+        .json::<Game>()
+        .await
+        .unwrap()
 }
 
 fn filter_by_date(games: &mut Vec<Game>) {
-  games.retain(|game| game.released_today())
+    games.retain(|game| game.released_today())
 }
 
 fn filter_by_platforms(games: &mut Vec<Game>, platforms: &[String]) {
-  if !platforms.is_empty() {
-    games.retain(|game| game.released_for(platforms));
-  }
+    if !platforms.is_empty() {
+        games.retain(|game| game.released_for(platforms));
+    }
 }
 
 fn filter_by_genres(games: &mut Vec<Game>, genres: &[String]) {
-  if !genres.is_empty() {
-    games.retain(|game| {
-      genres.iter().any(|genre| {
-        game.genres().to_lowercase().contains(genre)
-      })
-    })
-  }
+    if !genres.is_empty() {
+        games.retain(|game| {
+            genres
+                .iter()
+                .any(|genre| game.genres().to_lowercase().contains(genre))
+        })
+    }
 }
