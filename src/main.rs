@@ -3,7 +3,7 @@ use serde::Deserialize;
 
 use chrono::{Datelike, DateTime, Utc};
 
-const OPENCRITIC_URL: &str = "https://api.opencritic.com/api/game/recently-released";
+const OPENCRITIC_RELEASES_URL: &str = "https://api.opencritic.com/api/game/recently-released";
 
 #[derive(Debug, Deserialize)]
 struct Company {
@@ -44,9 +44,10 @@ struct Game {
 impl Game {
   fn print(&self) {
     println!(
-      "{} - {} - {}",
+      "{} - {} - {} - {}",
       self.name,
       self.score(),
+      self.genres(),
       self.platforms()
     );
   }
@@ -62,6 +63,13 @@ impl Game {
   fn platforms(&self) -> String {
     self.platforms.iter()
       .map(|platform| platform.short_name.clone())
+      .collect::<Vec<String>>()
+      .join(", ")
+  }
+
+  fn genres(&self) -> String {
+    self.genres.iter()
+      .map(|genre| genre.name.clone())
       .collect::<Vec<String>>()
       .join(", ")
   }
@@ -107,13 +115,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       || Vec::new(),
       |p| p.split(",").map(|e| e.to_string()).collect());
 
-  println!("{:?}", platforms);
-
-  let mut games = reqwest::blocking::get(OPENCRITIC_URL)?
+  let mut games = reqwest::blocking::get(OPENCRITIC_RELEASES_URL)?
     .json::<Vec<Game>>()?;
   games.sort_by(|a, b| a.name.cmp(&b.name));
-
-  // println!("games = {:?}", games);
 
   if games.len() == 0 {
     println!("No games released today :(");
