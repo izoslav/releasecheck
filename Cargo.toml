@@ -1,16 +1,16 @@
 [package]
 name = "releasecheck"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2018"
 license = "MIT"
 description = "Simple CLI app for getting a list of latest game releases from OpenCritic"
 repository = "https://github.com/izoslav/releasecheck/"
 
 [dependencies]
-chrono = { version = "0.4.19", features = ["serde"] }
+chrono = { version = "0.4.19", default-features = false, features = ["clock", "serde"] }
 clap = "3.0.0-beta.4"
 futures = "0.3.17"
 prettytable-rs = "0.8.0"
-reqwest = { version = "0.11.4", features = ["blocking", "json"] }
+reqwest = { version = "0.11.4", default-features = false, features = ["json", "default-tls"] }
 serde = { version = "1.0.130", features = ["derive"] }
-tokio = { version = "1.12.0", features = ["macros"] }
+tokio = { version = "1.12.0", default-features = false, features = ["macros", "rt-multi-thread"] }
