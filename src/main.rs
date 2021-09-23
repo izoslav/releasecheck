@@ -128,8 +128,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   if games.len() == 0 {
     println!(
-      "No relevant games released {}:(",
-      if opts.ignore_date { "" } else { "today " }
+      "🔴 No relevant games released {} 😢",
+      if opts.ignore_date { "recently" } else { "today" }
     );
   } else {
     let mut table = Table::new();
